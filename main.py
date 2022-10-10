@@ -10,7 +10,7 @@ def draw_text_on_image(image, text: str):
     # if the text contains a newline, split it into multiple lines
     lines = text.splitlines()
     for i, line in enumerate(lines):
-        image = cv2.putText(image, line, (25, 20 + i * 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        image = cv2.putText(image, line, (25, 20 + i * 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
     return image
 
 
@@ -27,15 +27,16 @@ if __name__ == '__main__':
             all_fingers_repr = []
             # get the tip of the index finger
             for finger in Communication.hand_object:
-                wrist = data_received.landmark[finger.MCP]
+                index_finger_lowermost = data_received.landmark[finger.MCP]
                 index_finger_tip = data_received.landmark[finger.TIP]
-                ADJ = index_finger_tip.y - wrist.y
-                OPP = index_finger_tip.x - wrist.x
+                ADJ = index_finger_tip.y - index_finger_lowermost.y
+                OPP = index_finger_tip.x - index_finger_lowermost.x
                 HYP = math.sqrt(ADJ ** 2 + OPP ** 2)
                 # get the angle between the ADJ and HYP
                 angle = math.degrees(math.acos(ADJ / HYP))
                 finger.set_angle(angle)
-                all_fingers_repr.append(finger)
+
+                all_fingers_repr.append(finger.__repr__())
                 # print(finger)
 
             all_fingers = "\n".join([str(finger) for finger in all_fingers_repr])

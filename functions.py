@@ -17,7 +17,7 @@ class Finger:
         self.__angle = 0
         # this is the angle needed for a change in status
         self.__angle_per_stage = 180 / self.statuses
-        self.__name = name
+        self.name = name
 
     def get_status(self):
         # limit the angle to be between 0 and 90 rather than 0 and 180
@@ -33,7 +33,7 @@ class Finger:
     def __repr__(self):
         # print the name, status, angle, and all statuses of the finger
         angle_rounded = round(self.__angle, 2)
-        return f"{self.__name} - Status: {self.get_status()} - Angle: {angle_rounded} - Statuses: {self.statuses}"
+        return f"{self.name} - Status: {self.get_status()} - Angle: {angle_rounded} - Statuses: {self.statuses}"
 
 
 # create an ENUM for all 5 fingers
@@ -80,8 +80,8 @@ def kill_processes():
     exit("Processes killed")
 
 
-def get_euclidean_distance(x1, y1, x2, y2):
-    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+def get_euclidean_distance(point1, point2):
+    return math.sqrt((point2.x - point1.x)**2 + (point2.y - point1.y)**2)
 
 
 threading.Timer(60, kill_processes).start()
