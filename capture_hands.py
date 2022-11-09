@@ -7,6 +7,7 @@ import atexit
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 cap = cv2.VideoCapture(0)
+mp_drawing_styles = mp.solutions.drawing_styles
 
 
 def store_data_to_class(comm_queue, draw_on_image_queue):
@@ -21,7 +22,6 @@ def store_data_to_class(comm_queue, draw_on_image_queue):
             if not success:
                 print("Ignoring empty camera frame.")
                 continue
-
             # To improve performance, optionally mark the image as not writeable to
             # pass by reference.
             image.flags.writeable = False
@@ -32,11 +32,19 @@ def store_data_to_class(comm_queue, draw_on_image_queue):
             image.flags.writeable = True
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-            if results.multi_hand_landmarks:
+            if results.multi_hand_world_landmarks:
                 # print("Sending data to queue")
-                comm_queue.put(results.multi_hand_landmarks[0])
+                comm_queue.put(results.multi_hand_world_landmarks[0])
+                # for hand_landmarks in results.multi_hand_world_landmarks:
+                #     mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
-                    mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                    mp_drawing.draw_landmarks(
+                        image,
+                        hand_landmarks,
+                        mp_hands.HAND_CONNECTIONS,
+                        mp_drawing_styles.get_default_hand_landmarks_style(),
+                        mp_drawing_styles.get_default_hand_connections_style())
 
             if not draw_on_image_queue.empty():
                 draw_on_image = draw_on_image_queue.get()
@@ -44,7 +52,7 @@ def store_data_to_class(comm_queue, draw_on_image_queue):
                 args = draw_on_image[to_draw]
                 image = to_draw(image, *args)
 
-            cv2.imshow('MediaPipe Hands', image)
+            cv2.imshow('Replivix', image)
 
             if cv2.waitKey(5) & 0xFF == 27:
                 break
