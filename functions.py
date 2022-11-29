@@ -10,28 +10,9 @@ def get_euclidean_distance(point1, point2):
     return math.sqrt((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2 + (point2.z - point1.z) ** 2)
 
 
-class Finger:
-    def __init__(self, statuses_range: int, landmarks: List[int], name: str = "Finger"):
-        self.statuses = statuses_range
-        self.current_status = 0
-        self.MCP = landmarks[0]
-        self.PIP = landmarks[1]
-        self.DIP = landmarks[2]
-        self.TIP = landmarks[3]
-        self.name = name
-
-    def set_status(self, status: int):
-        if status == self.current_status: return
-        self.current_status = status
-
-    def get_status(self):
-        # limit the angle to be between 0 and 90 rather than 0 and 180
-        # angle_new = self.__angle if self.__angle < 90 else 180 - self.__angle
-        return self.current_status
-
-    def __repr__(self):
-        # print the name, status, angle, and all statuses of the finger
-        return f"{self.name} - Status: {self.get_status()} - Statuses: {self.statuses}"
+@dataclass
+class BaseHand:
+    difference = increment = data_received = {}
 
 
 # create an ENUM for all 5 fingers
@@ -60,6 +41,45 @@ class Hand:
             return iterables[self.__current_finger - 1]
 
 
+class Finger:
+    def __init__(self, statuses_range: int, landmarks: List[int], name: str = "Finger"):
+        self.statuses = statuses_range
+        self.current_status = 0
+        self.MCP = landmarks[0]
+        self.PIP = landmarks[1]
+        self.DIP = landmarks[2]
+        self.TIP = landmarks[3]
+        self.name = name
+
+    def calculate_bent(self):
+        finger_tip = BaseHand.data_received[self.TIP].y
+        finger_bottom = BaseHand.data_received[0].y
+        distance_fingers = round(finger_bottom - finger_tip, self.statuses) - BaseHand.difference[self.name]
+        status = distance_fingers // BaseHand.increment[self.name]
+        # limit the status to 0-5, do not use if statement because it will not work with negative numbers
+        status = max(0, min(self.statuses, status))
+        # turn distance_fingers into a percentage from 0-100 using fist_closed_data and hand_open_data
+        distance_fingers = (distance_fingers / BaseHand.difference[self.name]) * 100
+        # limit the distance_fingers to 0-100
+        distance_fingers = max(0, min(100, distance_fingers))
+        # get the inverse of the distance_fingers, so if the distance is 60, the inverse is 40
+        inverse_distance_fingers = round(100 - distance_fingers)
+
+        self.set_status(status)
+        return inverse_distance_fingers
+
+    def set_status(self, status: int):
+        if status == self.current_status: return
+        self.current_status = status
+
+    def get_status(self):
+        return self.current_status
+
+    def __repr__(self):
+        # print the name, status, angle, and all statuses of the finger
+        return f"{self.name} - Status: {self.get_status()} - Statuses: {self.statuses}"
+
+
 @dataclass
 class Communication:
     communication_queue = multiprocessing.Queue()
@@ -85,7 +105,9 @@ def run_for(seconds: int):
             start_time = time.time()
             while time.time() - start_time < seconds:
                 func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
