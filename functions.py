@@ -1,6 +1,7 @@
 import multiprocessing
 import threading
 import time
+from collections import defaultdict
 from typing import List
 from numpy.lib import math
 from dataclasses import dataclass
@@ -50,8 +51,14 @@ class Finger:
         self.DIP = landmarks[2]
         self.TIP = landmarks[3]
         self.name = name
+        self.calculators = defaultdict(lambda: self.calculate_generic)
+        # self.calculators = defaultdict(self.calculate_generic)
+        self.calculators["Thumb"] = self.calculate_thumb
 
-    def calculate_bent(self):
+    def calculate_thumb(self) -> int:
+        return 0
+
+    def calculate_generic(self) -> int:
         finger_tip = BaseHand.data_received[self.TIP].y
         finger_bottom = BaseHand.data_received[0].y
         distance_fingers = round(finger_bottom - finger_tip, self.statuses) - BaseHand.difference[self.name]
@@ -67,6 +74,10 @@ class Finger:
 
         self.set_status(status)
         return inverse_distance_fingers
+
+    # if the finger name is thumb, the method calculate_bent must call calculate_thumb instead
+    def calculate_bent(self):
+        return self.calculators[self.name]()
 
     def set_status(self, status: int):
         if status == self.current_status: return
